@@ -109,6 +109,74 @@ const mockSchedules: ScheduleItem[] = [
     createdAt: '2026-10-01T10:00:00+08:00',
     updatedAt: '2026-10-01T10:00:00+08:00',
   },
+  {
+    id: 'sched_006',
+    title: '团队季度团建（两天一夜）',
+    description: '全员季度团建，真人 CS + 温泉 + 篝火晚会，统一大巴往返',
+    startTime: '2026-10-24T08:00:00+08:00',
+    endTime: '2026-10-25T18:00:00+08:00',
+    isAllDay: true,
+    priority: 'medium',
+    tags: ['团建', '户外', '季度活动'],
+    color: '#2ecc71',
+    isCompleted: false,
+    location: '莫干山度假区',
+    contact: '行政·小林',
+    sourceText: '10月24-25号两天一夜团建，去莫干山',
+    createdAt: '2026-10-02T09:30:00+08:00',
+    updatedAt: '2026-10-02T09:30:00+08:00',
+  },
+  {
+    id: 'sched_007',
+    title: '年度健康体检预约',
+    description: '提前一个月预约三甲医院年度体检，记得空腹',
+    startTime: '2026-11-02T08:30:00+08:00',
+    endTime: '2026-11-02T11:00:00+08:00',
+    isAllDay: false,
+    priority: 'medium',
+    tags: ['健康', '预约', '年度'],
+    color: '#3498db',
+    isCompleted: false,
+    location: '市人民医院体检中心',
+    contact: '体检科',
+    sourceText: '11月初约体检，空腹',
+    createdAt: '2026-10-01T15:00:00+08:00',
+    updatedAt: '2026-10-01T15:00:00+08:00',
+  },
+  {
+    id: 'sched_008',
+    title: '报销 Q3 差旅费用',
+    description: '整理 Q3 出差票据，走 OA 报销流程',
+    startTime: '2026-10-06T10:00:00+08:00',
+    endTime: '2026-10-06T11:00:00+08:00',
+    isAllDay: false,
+    priority: 'low',
+    tags: ['财务', '报销', '行政', '待办'],
+    color: '#8c98a8',
+    isCompleted: true,
+    location: '',
+    contact: '财务·张姐',
+    sourceText: '国庆后报销 Q3 差旅',
+    createdAt: '2026-09-28T11:00:00+08:00',
+    updatedAt: '2026-10-01T16:20:00+08:00',
+  },
+  {
+    id: 'sched_009',
+    title: '产品发布会彩排',
+    description: '新品发布会全流程彩排，含设备调试、走位、串词，务必全员到场',
+    startTime: '2026-10-10T14:00:00+08:00',
+    endTime: '2026-10-10T18:00:00+08:00',
+    isAllDay: false,
+    priority: 'urgent',
+    tags: ['发布会', '彩排', '关键节点', '全员'],
+    color: '#e74c3c',
+    isCompleted: false,
+    location: '会展中心 2 号馆',
+    contact: '市场·陈总',
+    sourceText: '10月10号下午发布会彩排，务必全员到场',
+    createdAt: '2026-10-02T08:00:00+08:00',
+    updatedAt: '2026-10-02T08:00:00+08:00',
+  },
 ];
 
 const mockClassifiedItems: ClassifiedItem[] = [
@@ -140,6 +208,28 @@ const mockClassifiedItems: ClassifiedItem[] = [
 
 let localSchedules = [...mockSchedules];
 let localClassified = [...mockClassifiedItems];
+
+// ==============================
+// 辅助：零散信息自动分类 + 标签提取
+// ==============================
+
+/** 按内容关键词自动分类（与 src/core/schedule.ts 的 autoClassify 规则保持一致） */
+function autoClassify(content: string): ClassifiedItem['type'] {
+  if (/(电话|手机|微信|联系方式|邮箱|@|联系人|微信号|手机号)/.test(content)) return 'contact';
+  if (/(会议|日程|时间|点|号|周|月|截止|提醒|安排|彩排|发布会)/.test(content)) return 'schedule';
+  if (/(链接|http|文档|报告|资料|参考|数据|论文|方案|路线图)/.test(content)) return 'reference';
+  return 'note';
+}
+
+/** 提取井号标签；无标签时按分类给一个默认标签，让演示更饱满 */
+function extractTags(content: string): string[] {
+  const tags: string[] = [];
+  const hashTags = content.match(/#([\u4e00-\u9fa5A-Za-z0-9_]+)/g);
+  if (hashTags) {
+    for (const t of hashTags) tags.push(t.slice(1));
+  }
+  return tags.slice(0, 5);
+}
 
 // ==============================
 // schedule.ts 用到的 mock 函数
@@ -179,11 +269,13 @@ export const mockScheduleData = {
   },
 
   saveClassifiedInfo(req: SaveInfoReq): ClassifiedItem {
+    const type = (req.hintType as ClassifiedItem['type']) || autoClassify(req.content);
+    const tags = extractTags(req.content);
     const item: ClassifiedItem = {
-      type: req.hintType as ClassifiedItem['type'] || 'note',
+      type,
       title: req.content.slice(0, 20),
       content: req.content,
-      tags: [],
+      tags,
       sourceText: req.content,
       createdAt: new Date().toISOString(),
     };
@@ -199,9 +291,14 @@ export const mockScheduleData = {
     if (req.type) {
       items = items.filter(i => i.type === req.type);
     }
+    // 分页切片：与真实 schedule.ts 的 queryClassifiedItems 口径一致
+    const page = req.page && req.page > 0 ? req.page : 1;
+    const pageSize = req.pageSize && req.pageSize > 0 ? req.pageSize : 20;
+    const total = items.length;
+    const start = (page - 1) * pageSize;
     return {
-      items,
-      pageInfo: { page: req.page || 1, pageSize: req.pageSize || 20, total: items.length },
+      items: items.slice(start, start + pageSize),
+      pageInfo: { page, pageSize, total },
     };
   },
 
