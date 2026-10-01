@@ -20,6 +20,7 @@ const appApi: ScheduleApi = {
   update:              (item) => ipcRenderer.invoke(IPC.SCHEDULE_UPDATE, item),
   delete:              (id) => ipcRenderer.invoke(IPC.SCHEDULE_DELETE, id),
   query:               (req) => ipcRenderer.invoke(IPC.SCHEDULE_QUERY, req),
+  integrateMessages:   (req) => ipcRenderer.invoke(IPC.INTEGRATE_MESSAGES, req),
 };
 
 contextBridge.exposeInMainWorld('appApi', appApi);

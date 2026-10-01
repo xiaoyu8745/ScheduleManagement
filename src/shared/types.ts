@@ -179,3 +179,68 @@ export interface SearchSummaryRes {
   keyPoints: string[];
   references: SearchResultItem[];
 }
+
+// ============ 云端消息整合（增量扩展） ============
+
+/** 支持的消息来源平台 */
+export type IntegrationSource = 'feishu' | 'dingtalk' | 'wecom' | 'manual';
+
+/** 归一化后的单条消息（跨平台统一结构） */
+export interface IngestMessage {
+  id: string;            // 平台内消息唯一 ID
+  senderName: string;    // 发言人
+  senderId?: string;     // 发言人 ID（可选）
+  content: string;       // 消息正文（纯文本，已去除 @ 提及等噪音）
+  timestamp: string;     // ISO8601
+  groupName?: string;    // 群名称（可选）
+  msgType?: string;      // 原始消息类型：text/image/file/...
+}
+
+/** 整合请求：指定平台 + 群 + 时间范围 */
+export interface IntegrationRequest {
+  source: IntegrationSource;
+  chatId?: string;       // 群/会话 ID（manual 模式可为空）
+  from?: string;         // 拉取起点 ISO8601
+  to?: string;           // 拉取终点 ISO8601
+  limit?: number;        // 最大拉取条数
+}
+
+/** 归纳出的要点 */
+export interface KeyPoint {
+  text: string;          // 要点内容
+  speakers: string[];    // 涉及发言人
+  confidence: number;    // 0~1
+}
+
+/** 整合结果：日程/待办 + 要点 + 摘要 */
+export interface SynthesisResult {
+  source: IntegrationSource;
+  messageCount: number;
+  summary: string;              // 整体摘要
+  keyPoints: KeyPoint[];        // 归纳要点
+  draftSchedules: ScheduleItem[]; // 提取的日程/待办草稿
+  contactHints: ClassifiedItem[]; // 提取的联系人线索
+  warnings: string[];           // 提示/风险（如无法解析的时间）
+}
+
+/** 拉取结果：归一化消息列表 */
+export interface IngestResult {
+  messages: IngestMessage[];
+  source: IntegrationSource;
+  chatName?: string;
+}
+
+/** 整合 API 请求（renderer → 主进程） */
+export interface IntegrateMessagesReq {
+  source: IntegrationSource;
+  chatId?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+}
+
+/** 整合 API 响应：直接返回拉取 + 整合的完整结果 */
+export interface IntegrateMessagesRes {
+  ingested: IngestResult;
+  synthesis: SynthesisResult;
+}

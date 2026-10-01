@@ -16,6 +16,9 @@ export const IPC = {
   SCHEDULE_DELETE:          'schedule:delete',
   SCHEDULE_QUERY:           'schedule:query',
 
+  // ============ 云端消息整合（暴露给渲染进程） ============
+  INTEGRATE_MESSAGES:       'integrate:messages',
+
   // ============ 内嵌搜索 Agent（内部调用，不暴露给渲染进程） ============
   SEARCH_MULTI_PLATFORM:    'search:multiPlatformQuery',
   SEARCH_GET_SUMMARY:       'search:getSummary',

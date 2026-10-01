@@ -8,7 +8,7 @@
 
 import type { ScheduleApi } from '../../shared/api';
 import type { Result } from '../../shared/types';
-import { mockScheduleData } from '../../shared/mock';
+import { mockScheduleData, mockIntegrationData } from '../../shared/mock';
 
 const delay = (ms = 220) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -38,4 +38,5 @@ export const browserMockApi: ScheduleApi = {
   update: (item) => call(() => mockScheduleData.update(item)),
   delete: (id) => call(() => mockScheduleData.delete(id)),
   query: (req) => call(() => mockScheduleData.query(req)),
+  integrateMessages: (req) => call(() => mockIntegrationData.integrateMessages(req)),
 };

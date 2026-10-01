@@ -18,6 +18,7 @@ import {
   deleteSchedule,
   querySchedule,
 } from '../core/schedule';
+import { integrateMessages } from '../core/integration/ingest';
 
 // 手机端直接调用 core 层函数，无需 IPC
 export const mobileAppApi: ScheduleApi = {
@@ -31,6 +32,7 @@ export const mobileAppApi: ScheduleApi = {
   update: updateSchedule,
   delete: deleteSchedule,
   query: querySchedule,
+  integrateMessages,
 };
 
 /**

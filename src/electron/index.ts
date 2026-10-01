@@ -30,6 +30,7 @@ import {
   querySchedule,
 } from '../core/schedule';
 import { multiPlatformQuery, getSummary } from '../core/search-agent';
+import { integrateMessages } from '../core/integration/ingest';
 
 // ==================== 安全约定 ====================
 // contextIsolation=true、nodeIntegration=false，由 BrowserWindow 默认值保证，
@@ -84,6 +85,9 @@ function registerIpcHandlers(): void {
   // ---------- search:* 通道（内部，不暴露给渲染进程） ----------
   ipcMain.handle(IPC.SEARCH_MULTI_PLATFORM, (_e, req) => multiPlatformQuery(req));
   ipcMain.handle(IPC.SEARCH_GET_SUMMARY, (_e, req) => getSummary(req));
+
+  // ---------- integrate:* 通道（云端消息整合，暴露给渲染进程） ----------
+  ipcMain.handle(IPC.INTEGRATE_MESSAGES, (_e, req) => integrateMessages(req));
 }
 
 // ==================== 应用生命周期 ====================

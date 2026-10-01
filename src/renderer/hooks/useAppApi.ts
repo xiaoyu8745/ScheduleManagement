@@ -19,6 +19,7 @@ import type {
   QueryClassifiedReq, ClassifiedQueryRes,
   ScheduleInput, ScheduleItem,
   ScheduleQueryReq, ScheduleQueryRes,
+  IntegrateMessagesReq, IntegrateMessagesRes,
 } from '../../shared/types';
 import type { ScheduleApi } from '../../shared/api';
 import { browserMockApi } from '../dev/browserMockApi';
@@ -92,5 +93,7 @@ export function useAppApi() {
       call(() => api().delete(id)),
     query: (req: ScheduleQueryReq) =>
       call(() => api().query(toPlain(req))),
+    integrateMessages: (req: IntegrateMessagesReq) =>
+      call(() => api().integrateMessages(toPlain(req))),
   };
 }

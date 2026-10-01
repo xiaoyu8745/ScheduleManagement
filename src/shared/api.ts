@@ -9,6 +9,7 @@ import type {
   QueryClassifiedReq, ClassifiedQueryRes,
   ScheduleInput, ScheduleItem,
   ScheduleQueryReq, ScheduleQueryRes,
+  IntegrateMessagesReq, IntegrateMessagesRes,
   Result,
 } from './types';
 
@@ -24,4 +25,6 @@ export interface ScheduleApi {
   update(item: ScheduleItem): Promise<Result<ScheduleItem>>;
   delete(id: string): Promise<Result<boolean>>;
   query(req: ScheduleQueryReq): Promise<Result<ScheduleQueryRes>>;
+  // 契约增量扩展：云端消息整合（拉取 + 整合一步完成）
+  integrateMessages(req: IntegrateMessagesReq): Promise<Result<IntegrateMessagesRes>>;
 }

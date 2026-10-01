@@ -16,6 +16,7 @@ import type {
   ScheduleInput, ScheduleQueryReq, ScheduleQueryRes,
   SearchRequest, SearchResultItem, SearchSummaryRes,
   SearchSource,
+  IntegrateMessagesReq, IntegrateMessagesRes, IngestMessage,
 } from '../shared/types';
 
 // ========== 内置工具 ==========
@@ -415,6 +416,76 @@ export const mockSearchData = {
         'AI 搜索模块：11 月中旬上线',
       ],
       references: this.multiPlatformQuery(_req),
+    };
+  },
+};
+
+// ==============================
+// integration 用到的 mock 数据
+// ==============================
+
+export const mockIntegrationData = {
+  integrateMessages(_req: IntegrateMessagesReq): IntegrateMessagesRes {
+    const messages: IngestMessage[] = [
+      { id: 'm1', senderName: '王经理', content: '明天上午 10 点在 3F 会议室评审 Q4 产品路线图，大家都来', timestamp: '2026-10-02T09:10:00+08:00', groupName: '产品研发群' },
+      { id: 'm2', senderName: '小李', content: '收到，我会把 AI 搜索模块的排期带上', timestamp: '2026-10-02T09:12:00+08:00', groupName: '产品研发群' },
+      { id: 'm3', senderName: '张姐', content: '提醒一下，10 月 8 号前务必把 Q3 述职报告交了', timestamp: '2026-10-02T09:20:00+08:00', groupName: '产品研发群' },
+      { id: 'm4', senderName: '陈总', content: '10 月 10 号下午产品发布会彩排，务必全员到场', timestamp: '2026-10-02T09:30:00+08:00', groupName: '产品研发群' },
+      { id: 'm5', senderName: '小林', content: '下周三上午去盒马采购聚餐食材，谁有空一起去', timestamp: '2026-10-02T10:00:00+08:00', groupName: '产品研发群' },
+      { id: 'm6', senderName: '王经理', content: '对了，新来的产品助理电话 138xxxx，之后对接找她', timestamp: '2026-10-02T10:05:00+08:00', groupName: '产品研发群' },
+    ];
+
+    return {
+      ingested: { messages, source: _req.source, chatName: '产品研发群' },
+      synthesis: {
+        source: _req.source,
+        messageCount: messages.length,
+        summary: '已检查「产品研发群」6 条消息，提取到 3 项日程/待办、归纳 4 条要点。来源：云端群聊。',
+        keyPoints: [
+          { text: '明天上午 10 点在 3F 会议室评审 Q4 产品路线图', speakers: ['王经理'], confidence: 0.85 },
+          { text: '10 月 8 号前务必把 Q3 述职报告交了', speakers: ['张姐'], confidence: 0.8 },
+          { text: '10 月 10 号下午产品发布会彩排，务必全员到场', speakers: ['陈总'], confidence: 0.82 },
+          { text: '新来的产品助理电话 138xxxx，之后对接找她', speakers: ['王经理'], confidence: 0.75 },
+        ],
+        draftSchedules: [
+          {
+            id: 'int_m1', title: '3F 会议室评审 Q4 产品路线图',
+            description: '王经理：明天上午 10 点在 3F 会议室评审 Q4 产品路线图',
+            startTime: '2026-10-03T10:00:00+08:00', endTime: '2026-10-03T11:00:00+08:00',
+            isAllDay: false, priority: 'high', tags: ['待办'], color: '#4f8cff',
+            isCompleted: false, location: '3F 会议室', contact: '王经理',
+            sourceText: '王经理: 明天上午 10 点在 3F 会议室评审 Q4 产品路线图，大家都来',
+            createdAt: '2026-10-02T10:10:00+08:00', updatedAt: '2026-10-02T10:10:00+08:00',
+          },
+          {
+            id: 'int_m3', title: '提交 Q3 述职报告',
+            description: '张姐：10 月 8 号前务必把 Q3 述职报告交了',
+            startTime: '2026-10-08T18:00:00+08:00', endTime: '2026-10-08T18:00:00+08:00',
+            isAllDay: false, priority: 'urgent', tags: ['待办', '截止'], color: '#e74c3c',
+            isCompleted: false, location: '', contact: '张姐',
+            sourceText: '张姐: 提醒一下，10 月 8 号前务必把 Q3 述职报告交了',
+            createdAt: '2026-10-02T10:10:00+08:00', updatedAt: '2026-10-02T10:10:00+08:00',
+          },
+          {
+            id: 'int_m4', title: '产品发布会彩排',
+            description: '陈总：10 月 10 号下午产品发布会彩排，务必全员到场',
+            startTime: '2026-10-10T14:00:00+08:00', endTime: '2026-10-10T15:00:00+08:00',
+            isAllDay: false, priority: 'urgent', tags: ['待办', '截止'], color: '#e74c3c',
+            isCompleted: false, location: '', contact: '陈总',
+            sourceText: '陈总: 10 月 10 号下午产品发布会彩排，务必全员到场',
+            createdAt: '2026-10-02T10:10:00+08:00', updatedAt: '2026-10-02T10:10:00+08:00',
+          },
+        ],
+        contactHints: [
+          {
+            id: 'inthint_m6', type: 'contact', title: '王经理',
+            content: '新来的产品助理电话 138xxxx，之后对接找她',
+            tags: ['群消息', '联系人'], sourceText: '王经理: 对了，新来的产品助理电话 138xxxx，之后对接找她',
+            createdAt: '2026-10-02T10:10:00+08:00',
+          },
+        ],
+        warnings: [],
+      },
     };
   },
 };

@@ -25,6 +25,7 @@ import { computed, ref } from 'vue';
 import ScheduleTable from './components/ScheduleTable.vue';
 import ClassifiedPanel from './components/ClassifiedPanel.vue';
 import HighlightPreviewModal from './components/HighlightPreviewModal.vue';
+import IntegrationPanel from './components/IntegrationPanel.vue';
 import type { HighlightSegment, ScheduleItem } from '../shared/types';
 import { useScheduleStore, type PreviewPayload } from './hooks/useScheduleStore';
 
@@ -96,6 +97,14 @@ function onImported() {
   showHighlight.value = false;
   refreshScheduleTable();
 }
+
+// ==================== 云端消息整合 ====================
+
+const integrationRef = ref<InstanceType<typeof IntegrationPanel> | null>(null);
+
+function openIntegration() {
+  integrationRef.value?.open();
+}
 </script>
 
 <template>
@@ -110,6 +119,9 @@ function onImported() {
         </div>
       </div>
       <div class="header-right">
+        <el-button class="integrate-btn" type="primary" plain size="small" @click="openIntegration">
+          ☁ 云端整合
+        </el-button>
         <span class="mode-badge">共 {{ state.schedules.length }} 条日程</span>
         <span class="mode-badge">ChronoFlow v1.0</span>
       </div>
@@ -131,6 +143,7 @@ function onImported() {
 
   <!-- ========== 3. 全局弹窗 ========== -->
   <HighlightPreviewModal @close="onCloseHighlight" @imported="onImported" />
+  <IntegrationPanel ref="integrationRef" />
 </template>
 
 <style>
@@ -218,6 +231,9 @@ body {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+.integrate-btn {
+  margin-right: 4px;
 }
 .mode-badge {
   font-size: 11px;

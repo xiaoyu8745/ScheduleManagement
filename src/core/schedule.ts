@@ -55,7 +55,7 @@ function toResult<T>(data: T): Result<T> {
  *   - "X月X日/X号"（可带 "X 点"）
  *   - 直接 ISO / "YYYY-MM-DD HH:mm"
  */
-function parseDateTime(text: string, base: Date): Date | null {
+export function parseDateTime(text: string, base: Date): Date | null {
   const s = text.trim();
   if (!s) return null;
 
@@ -170,7 +170,7 @@ function parseClock(s: string): { hour: number; minute: number } | null {
 }
 
 /** 默认结束时间：开始后 1 小时 */
-function defaultEnd(start: Date): Date {
+export function defaultEnd(start: Date): Date {
   const e = new Date(start.getTime() + 60 * 60 * 1000);
   return e;
 }
@@ -299,8 +299,8 @@ export async function genTableFromText(req: GenScheduleTableReq): Promise<Result
 
 // ==================== 核心能力 2：智能划重点 ====================
 
-// 六类实体识别规则（按优先级排列，避免重叠）
-const HIGHLIGHT_RULES: Array<{
+/** 六类实体识别规则（按优先级排列，避免重叠）—— 导出供 synthesize.ts 复用 */
+export const HIGHLIGHT_RULES: Array<{
   type: HighlightType;
   pattern: RegExp;
   suggestion: string;
@@ -437,7 +437,7 @@ export async function saveClassifiedInfo(req: SaveInfoReq): Promise<Result<Class
 }
 
 /** 按内容自动分类 */
-function autoClassify(content: string): ClassifiedType {
+export function autoClassify(content: string): ClassifiedType {
   if (/(电话|手机|微信|联系方式|邮箱|@|联系人)/.test(content)) return 'contact';
   if (/(会议|日程|时间|点|号|周|月|截止|提醒|安排)/.test(content)) return 'schedule';
   if (/(链接|http|文档|报告|资料|参考|数据|论文|方案)/.test(content)) return 'reference';
@@ -634,19 +634,19 @@ export async function querySchedule(req: ScheduleQueryReq): Promise<Result<Sched
 
 // ==================== 辅助函数 ====================
 
-function inferPriority(text: string): Priority {
+export function inferPriority(text: string): Priority {
   if (/(紧急|务必|必须|马上|立刻|截止|加急)/.test(text)) return 'urgent';
   if (/(重要|重点|关键|评审|汇报|提交)/.test(text)) return 'high';
   if (/(分享|讨论|交流)/.test(text)) return 'medium';
   return 'low';
 }
 
-function extractLocation(text: string): string {
+export function extractLocation(text: string): string {
   const m = /(?:在|到|去|地点|地址)([\u4e00-\u9fa5A-Za-z0-9]+(?:会议室|餐厅|酒店|超市|公司|大厦|广场|中心|线上|办公室|会议室))/i.exec(text);
   return m ? m[1] : '';
 }
 
-function extractContact(text: string): string {
+export function extractContact(text: string): string {
   const m = /([\u4e00-\u9fa5]{2,4})(?:经理|工|总|姐|哥|老师|博士)?(?:联系|负责|主讲|一起去)/.exec(text);
   return m ? m[1] : '';
 }
