@@ -17,6 +17,9 @@ export interface ScheduleApi {
   extractHighlights(req: ExtractHighlightsReq): Promise<Result<ExtractHighlightsRes>>;
   saveClassifiedInfo(req: SaveInfoReq): Promise<Result<ClassifiedItem>>;
   queryClassifiedItems(req: QueryClassifiedReq): Promise<Result<ClassifiedQueryRes>>;
+  // 契约增量扩展：零散信息编辑/删除（详见 PR 描述，实现层均已同步）
+  updateClassifiedItem(item: ClassifiedItem): Promise<Result<ClassifiedItem>>;
+  deleteClassifiedItem(id: string): Promise<Result<boolean>>;
   create(input: ScheduleInput): Promise<Result<ScheduleItem>>;
   update(item: ScheduleItem): Promise<Result<ScheduleItem>>;
   delete(id: string): Promise<Result<boolean>>;

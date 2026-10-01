@@ -22,6 +22,8 @@ import {
   extractHighlights,
   saveClassifiedInfo,
   queryClassifiedItems,
+  updateClassifiedItem,
+  deleteClassifiedItem,
   createSchedule,
   updateSchedule,
   deleteSchedule,
@@ -72,6 +74,8 @@ function registerIpcHandlers(): void {
   ipcMain.handle(IPC.SCHEDULE_EXTRACT_HIGHLIGHTS, (_e, req) => extractHighlights(req));
   ipcMain.handle(IPC.SCHEDULE_SAVE_CLASSIFIED, (_e, req) => saveClassifiedInfo(req));
   ipcMain.handle(IPC.SCHEDULE_QUERY_CLASSIFIED, (_e, req) => queryClassifiedItems(req));
+  ipcMain.handle(IPC.SCHEDULE_UPDATE_CLASSIFIED, (_e, item) => updateClassifiedItem(item));
+  ipcMain.handle(IPC.SCHEDULE_DELETE_CLASSIFIED, (_e, id) => deleteClassifiedItem(id));
   ipcMain.handle(IPC.SCHEDULE_CREATE, (_e, input) => createSchedule(input));
   ipcMain.handle(IPC.SCHEDULE_UPDATE, (_e, item) => updateSchedule(item));
   ipcMain.handle(IPC.SCHEDULE_DELETE, (_e, id) => deleteSchedule(id));

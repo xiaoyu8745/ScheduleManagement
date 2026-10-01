@@ -9,6 +9,8 @@ export const IPC = {
   SCHEDULE_EXTRACT_HIGHLIGHTS: 'schedule:extractHighlights',
   SCHEDULE_SAVE_CLASSIFIED: 'schedule:saveClassifiedInfo',
   SCHEDULE_QUERY_CLASSIFIED: 'schedule:queryClassifiedItems',
+  SCHEDULE_UPDATE_CLASSIFIED: 'schedule:updateClassifiedItem',
+  SCHEDULE_DELETE_CLASSIFIED: 'schedule:deleteClassifiedItem',
   SCHEDULE_CREATE:          'schedule:create',
   SCHEDULE_UPDATE:          'schedule:update',
   SCHEDULE_DELETE:          'schedule:delete',

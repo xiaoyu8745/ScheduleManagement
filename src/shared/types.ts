@@ -91,6 +91,11 @@ export interface SaveInfoReq {
 export type ClassifiedType = 'schedule' | 'reference' | 'contact' | 'note';
 
 export interface ClassifiedItem {
+  /**
+   * 稳定标识（编辑/删除定位用）。
+   * 契约增量扩展：可选字段，旧数据无 id 时实现层回退用 createdAt 匹配。
+   */
+  id?: string;
   type: ClassifiedType;
   title: string;
   content: string;

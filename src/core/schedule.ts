@@ -4,7 +4,7 @@
  * 实现三大核心能力 + 日程 CRUD：
  *   1. genTableFromText —— 输入文字，智能生成时间表
  *   2. extractHighlights —— 文本划重点，提取候选日程
- *   3. saveClassifiedInfo / queryClassifiedItems —— 零散信息自动分类存储
+ *   3. saveClassifiedInfo / queryClassifiedItems / updateClassifiedItem / deleteClassifiedItem —— 零散信息分类存储与编辑
  *   4. createSchedule / updateSchedule / deleteSchedule / querySchedule —— 日程增删改查
  *
  * 本模块不依赖 Electron 或 Capacitor，纯 TypeScript 逻辑。
@@ -424,6 +424,7 @@ export async function saveClassifiedInfo(req: SaveInfoReq): Promise<Result<Class
   const type = (req.hintType as ClassifiedType) || autoClassify(req.content);
   const tags = extractTags(req.content);
   const item: ClassifiedItem = {
+    id: nextId('cls'),
     type,
     title: req.content.slice(0, 20),
     content: req.content,
@@ -479,6 +480,51 @@ export async function queryClassifiedItems(req: QueryClassifiedReq): Promise<Res
     items: paged,
     pageInfo: { page, pageSize, total },
   });
+}
+
+// ==================== 零散信息编辑 / 删除 ====================
+
+/** 定位一条分类记录：优先 id，旧数据（无 id）回退用 createdAt */
+function classifiedKeyOf(c: ClassifiedItem): string {
+  return c.id ?? c.createdAt;
+}
+
+export async function updateClassifiedItem(item: ClassifiedItem): Promise<Result<ClassifiedItem>> {
+  if (MOCK_MODE) {
+    return { success: true, data: mockScheduleData.updateClassifiedItem(item) };
+  }
+
+  const key = classifiedKeyOf(item);
+  const idx = localClassified.findIndex((c) => classifiedKeyOf(c) === key);
+  if (idx === -1) {
+    return {
+      success: false,
+      error: { code: 'E_CLASSIFIED_NOT_FOUND', message: '未找到对应的零散信息记录' },
+    };
+  }
+  // createdAt / sourceText 不可变：编辑只改业务字段
+  const updated: ClassifiedItem = {
+    ...localClassified[idx],
+    ...item,
+    id: classifiedKeyOf(localClassified[idx]),
+    createdAt: localClassified[idx].createdAt,
+  };
+  localClassified[idx] = updated;
+  return toResult(updated);
+}
+
+export async function deleteClassifiedItem(id: string): Promise<Result<boolean>> {
+  if (MOCK_MODE) {
+    return { success: true, data: mockScheduleData.deleteClassifiedItem(id) };
+  }
+
+  const idx = localClassified.findIndex((c) => classifiedKeyOf(c) === id);
+  if (idx === -1) {
+    // 与 deleteSchedule 口径一致：找不到返回 success:true + data:false
+    return toResult(false);
+  }
+  localClassified.splice(idx, 1);
+  return toResult(true);
 }
 
 // ==================== 日程 CRUD ====================

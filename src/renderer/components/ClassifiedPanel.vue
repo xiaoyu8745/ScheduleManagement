@@ -9,7 +9,7 @@
  * 约束：不 import src/electron/**，不使用 process / require，一律走 useAppApi。
  */
 import { computed, onMounted, ref } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAppApi } from '../hooks/useAppApi';
 import type {
   ClassifiedItem,
@@ -61,6 +61,24 @@ function tagStyle(type: ClassifiedType | undefined) {
 // ---- 输入区 ----
 const inputText = ref('');
 const saving = ref(false);
+
+// ---- 编辑弹窗 ----
+const editVisible = ref(false);
+const editSaving = ref(false);
+const editForm = ref<{ type: ClassifiedType; title: string; content: string; tagsText: string }>({
+  type: 'note',
+  title: '',
+  content: '',
+  tagsText: '',
+});
+/** 正在编辑的原始条目（保存时回传 id / sourceText / createdAt） */
+let editingItem: ClassifiedItem | null = null;
+
+/** 分类下拉/按钮组选项（来自 TYPE_META，天然同源） */
+const TYPE_OPTIONS = (Object.keys(TYPE_META) as ClassifiedType[]).map((t) => ({
+  value: t,
+  label: TYPE_META[t].label,
+}));
 
 // ---- 查询条件 ----
 const activeType = ref<TabValue>('');
@@ -152,6 +170,78 @@ async function handleSave(): Promise<void> {
     // useAppApi 已经弹过错误提示
   } finally {
     saving.value = false;
+  }
+}
+
+// ==================== 编辑 / 删除 ====================
+
+/** 条目稳定 Key：优先 id，旧数据（无 id）回退 createdAt */
+function itemKey(item: ClassifiedItem): string {
+  return item.id ?? item.createdAt;
+}
+
+/** 打开编辑弹窗，用当前条目预填表单 */
+function startEdit(item: ClassifiedItem): void {
+  editingItem = item;
+  editForm.value = {
+    type: item.type,
+    title: item.title,
+    content: item.content,
+    tagsText: (item.tags ?? []).join(' '),
+  };
+  editVisible.value = true;
+}
+
+async function handleEditSave(): Promise<void> {
+  if (!editingItem) return;
+  const content = editForm.value.content.trim();
+  if (!content) {
+    ElMessage.warning('内容不能为空');
+    return;
+  }
+
+  editSaving.value = true;
+  try {
+    const tags = editForm.value.tagsText
+      .trim()
+      .split(/[\s,，、]+/)
+      .filter(Boolean);
+    await api.updateClassifiedItem({
+      ...editingItem,
+      id: itemKey(editingItem),
+      type: editForm.value.type,
+      // 标题留空时按保存时的规则自动取内容前 20 字
+      title: editForm.value.title.trim() || content.slice(0, 20),
+      content,
+      tags,
+    });
+    ElMessage.success('已保存修改');
+    editVisible.value = false;
+    await loadItems();
+  } catch {
+    // useAppApi 已经弹过错误提示
+  } finally {
+    editSaving.value = false;
+  }
+}
+
+async function handleDelete(item: ClassifiedItem): Promise<void> {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除「${item.title || '这条记录'}」吗？删除后不可恢复。`,
+      '删除确认',
+      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
+    );
+  } catch {
+    return; // 用户取消
+  }
+  try {
+    const ok = await api.deleteClassifiedItem(itemKey(item));
+    if (ok) ElMessage.success('已删除');
+    else ElMessage.warning('记录不存在或已被删除');
+    await loadItems();
+  } catch {
+    // useAppApi 已经弹过错误提示
   }
 }
 
@@ -252,7 +342,12 @@ onMounted(() => {
       />
 
       <ul v-else class="item-list">
-        <li v-for="(item, idx) in items" :key="`${item.createdAt}-${idx}`" class="item">
+        <li v-for="(item, idx) in items" :key="`${itemKey(item)}-${idx}`" class="item">
+          <span class="item-actions">
+            <el-button link type="primary" size="small" @click="startEdit(item)">编辑</el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(item)">删除</el-button>
+          </span>
+
           <div class="item-head">
             <span class="type-tag" :style="tagStyle(item.type)">
               {{ metaOf(item.type).label }}
@@ -277,6 +372,58 @@ onMounted(() => {
         </li>
       </ul>
     </div>
+
+    <!-- ==================== 编辑弹窗 ==================== -->
+    <el-dialog
+      v-model="editVisible"
+      title="编辑零散信息"
+      width="440px"
+      :close-on-click-modal="false"
+      class="edit-dialog"
+    >
+      <el-form label-width="48px" label-position="left">
+        <el-form-item label="分类">
+          <el-radio-group v-model="editForm.type">
+            <el-radio-button
+              v-for="opt in TYPE_OPTIONS"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="标题">
+          <el-input
+            v-model="editForm.title"
+            maxlength="30"
+            placeholder="留空则自动取内容前 20 字"
+          />
+        </el-form-item>
+        <el-form-item label="内容">
+          <el-input
+            v-model="editForm.content"
+            type="textarea"
+            :rows="4"
+            maxlength="500"
+            show-word-limit
+            @keydown.ctrl.enter.prevent="handleEditSave"
+          />
+        </el-form-item>
+        <el-form-item label="标签">
+          <el-input
+            v-model="editForm.tagsText"
+            placeholder="用空格或逗号分隔，例如：产品 路线图"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editVisible = false">取消</el-button>
+        <el-button type="primary" :loading="editSaving" @click="handleEditSave">
+          保存
+        </el-button>
+      </template>
+    </el-dialog>
 
     <!-- ==================== 分页 ==================== -->
     <footer v-if="total > 0" class="panel-footer">
@@ -372,6 +519,7 @@ onMounted(() => {
 
 /* ---------- 单条记录 ---------- */
 .item {
+  position: relative;
   padding: 10px 12px;
   background: #fafbfc;
   border: 1px solid #eef0f3;
@@ -381,6 +529,28 @@ onMounted(() => {
 .item:hover {
   background: #f5f7fa;
   border-color: #dbe1e8;
+}
+
+/* 悬浮操作按钮：右上角，悬停显现（渐变底遮住时间文字）；触屏设备无 hover，常显 */
+.item-actions {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  z-index: 1;
+  display: flex;
+  gap: 2px;
+  padding-left: 14px;
+  opacity: 0;
+  background: linear-gradient(to right, transparent, #f5f7fa 35%);
+  transition: opacity 0.15s;
+}
+.item:hover .item-actions {
+  opacity: 1;
+}
+@media (hover: none) {
+  .item-actions {
+    opacity: 1;
+  }
 }
 .item-head {
   display: flex;

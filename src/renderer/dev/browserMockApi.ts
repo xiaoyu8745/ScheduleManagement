@@ -32,6 +32,8 @@ export const browserMockApi: ScheduleApi = {
   extractHighlights: (req) => call(() => mockScheduleData.extractHighlights(req)),
   saveClassifiedInfo: (req) => call(() => mockScheduleData.saveClassifiedInfo(req)),
   queryClassifiedItems: (req) => call(() => mockScheduleData.queryClassifiedItems(req)),
+  updateClassifiedItem: (item) => call(() => mockScheduleData.updateClassifiedItem(item)),
+  deleteClassifiedItem: (id) => call(() => mockScheduleData.deleteClassifiedItem(id)),
   create: (input) => call(() => mockScheduleData.create(input)),
   update: (item) => call(() => mockScheduleData.update(item)),
   delete: (id) => call(() => mockScheduleData.delete(id)),

@@ -67,6 +67,10 @@ export function useAppApi() {
       call(() => api().saveClassifiedInfo(req)),
     queryClassifiedItems: (req: QueryClassifiedReq) =>
       call(() => api().queryClassifiedItems(req)),
+    updateClassifiedItem: (item: ClassifiedItem) =>
+      call(() => api().updateClassifiedItem(item)),
+    deleteClassifiedItem: (id: string) =>
+      call(() => api().deleteClassifiedItem(id)),
     create: (input: ScheduleInput) =>
       call(() => api().create(input)),
     update: (item: ScheduleItem) =>

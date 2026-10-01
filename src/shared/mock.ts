@@ -21,6 +21,7 @@ import type {
 // ========== 内置工具 ==========
 
 let nextId = () => `sched_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+let nextClsId = () => `cls_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 // 内置样板日程（mock-data 基线）
 const mockSchedules: ScheduleItem[] = [
@@ -181,6 +182,7 @@ const mockSchedules: ScheduleItem[] = [
 
 const mockClassifiedItems: ClassifiedItem[] = [
   {
+    id: 'cls_001',
     type: 'contact',
     title: '王经理',
     content: '王经理，电话 138xxxx，负责产品部',
@@ -189,6 +191,7 @@ const mockClassifiedItems: ClassifiedItem[] = [
     createdAt: '2026-09-20T10:00:00+08:00',
   },
   {
+    id: 'cls_002',
     type: 'reference',
     title: 'Q4 产品路线图草案',
     content: 'AI 搜索模块预计 11 月上线，Q4 重点攻坚智能日程生成算法',
@@ -197,6 +200,7 @@ const mockClassifiedItems: ClassifiedItem[] = [
     createdAt: '2026-09-22T10:00:00+08:00',
   },
   {
+    id: 'cls_003',
     type: 'note',
     title: '团队聚餐想法',
     content: '下下周可以考虑团队吃火锅，统计一下忌口',
@@ -272,6 +276,7 @@ export const mockScheduleData = {
     const type = (req.hintType as ClassifiedItem['type']) || autoClassify(req.content);
     const tags = extractTags(req.content);
     const item: ClassifiedItem = {
+      id: nextClsId(),
       type,
       title: req.content.slice(0, 20),
       content: req.content,
@@ -281,6 +286,27 @@ export const mockScheduleData = {
     };
     localClassified.push(item);
     return item;
+  },
+
+  updateClassifiedItem(item: ClassifiedItem): ClassifiedItem {
+    const key = item.id ?? item.createdAt;
+    const idx = localClassified.findIndex(c => (c.id ?? c.createdAt) === key);
+    if (idx === -1) throw new Error('E_CLASSIFIED_NOT_FOUND');
+    // createdAt / sourceText 不可变：与真实实现口径一致
+    localClassified[idx] = {
+      ...localClassified[idx],
+      ...item,
+      id: localClassified[idx].id ?? key,
+      createdAt: localClassified[idx].createdAt,
+    };
+    return localClassified[idx];
+  },
+
+  deleteClassifiedItem(id: string): boolean {
+    const idx = localClassified.findIndex(c => (c.id ?? c.createdAt) === id);
+    if (idx === -1) return false;
+    localClassified.splice(idx, 1);
+    return true;
   },
 
   queryClassifiedItems(req: QueryClassifiedReq): ClassifiedQueryRes {
